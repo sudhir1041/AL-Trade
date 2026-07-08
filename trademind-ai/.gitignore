@@ -1,0 +1,212 @@
+# =============================================================================
+# TradeMind AI – .gitignore
+# Python / Django / React / Docker / IDE / OS
+# =============================================================================
+
+# ─────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.so
+*.dylib
+
+# Distribution / packaging
+.eggs/
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+sdist/
+.installed.cfg
+lib/
+lib64/
+MANIFEST
+
+# Testing
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.hypothesis/
+cover/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+junit*.xml
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+pyrightconfig.json
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+Pipfile.lock
+poetry.lock
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ─────────────────────────────────────────
+# Django
+# ─────────────────────────────────────────
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Collected static files
+staticfiles/
+static_root/
+
+# User-uploaded media
+media/
+
+# Django migrations (keep these; comment out if you prefer)
+# */migrations/*.py
+# !*/migrations/__init__.py
+
+# ─────────────────────────────────────────
+# Environment / Secrets
+# ─────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# Secret files
+secrets/
+*.secret
+*.secrets
+
+# ─────────────────────────────────────────
+# Docker
+# ─────────────────────────────────────────
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# ─────────────────────────────────────────
+# Node / Frontend
+# ─────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+.npm
+.yarn
+
+# Next.js
+.next/
+out/
+.vercel
+
+# Build output
+frontend/dist/
+frontend/build/
+
+# React / Vite
+*.local
+
+# ─────────────────────────────────────────
+# ML / Data
+# ─────────────────────────────────────────
+ml_models/
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.onnx
+*.pt
+*.pth
+*.ckpt
+data/raw/
+data/processed/
+*.parquet
+*.feather
+*.csv
+!*/fixtures/*.csv
+
+# ─────────────────────────────────────────
+# IDE / Editor
+# ─────────────────────────────────────────
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.vim/
+
+# ─────────────────────────────────────────
+# Operating System
+# ─────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ─────────────────────────────────────────
+# Certificates & Keys (NEVER commit these)
+# ─────────────────────────────────────────
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.jks
+*.keystore
+infra/nginx/certs/
+
+# ─────────────────────────────────────────
+# Logs & Monitoring
+# ─────────────────────────────────────────
+logs/
+*.log.*
+celerybeat-schedule
+celerybeat.pid
+/tmp/prometheus_multiproc/
+
+# ─────────────────────────────────────────
+# Backup / Temporary files
+# ─────────────────────────────────────────
+*.bak
+*.tmp
+*.temp
+*.orig
+*.rej
+*.patch
+*.diff

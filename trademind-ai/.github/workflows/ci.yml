@@ -1,0 +1,254 @@
+name: TradeMind AI — CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.13"
+  NODE_VERSION:   "20"
+  REGISTRY:       ghcr.io
+  IMAGE_NAME:     ${{ github.repository }}/trademind-api
+
+jobs:
+  # ─────────────────────────────────────────
+  # 1. Backend Tests
+  # ─────────────────────────────────────────
+  backend-test:
+    name: Backend — Test & Lint
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB:       trademind_test
+          POSTGRES_USER:     trademind
+          POSTGRES_PASSWORD: testpassword
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt
+
+      - name: Run linting (flake8)
+        working-directory: backend
+        run: flake8 . --max-line-length=120 --exclude=migrations,__pycache__
+
+      - name: Run formatting check (black)
+        working-directory: backend
+        run: black --check --diff . --exclude '/(migrations|\.git)/'
+
+      - name: Run import sorting check (isort)
+        working-directory: backend
+        run: isort --check-only --diff .
+
+      - name: Run tests with coverage
+        working-directory: backend
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.development
+          DJANGO_SECRET_KEY:      test-secret-key-ci
+          DB_NAME:                trademind_test
+          DB_USER:                trademind
+          DB_PASSWORD:            testpassword
+          DB_HOST:                localhost
+          DB_PORT:                "5432"
+          REDIS_URL:              redis://localhost:6379/0
+          REDIS_PASSWORD:         ""
+          FIELD_ENCRYPTION_KEY:   ""
+        run: |
+          python -m pytest tests/ \
+            --cov=apps \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=70 \
+            -v
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          file: backend/coverage.xml
+          fail_ci_if_error: false
+
+  # ─────────────────────────────────────────
+  # 2. Security Scan
+  # ─────────────────────────────────────────
+  security-scan:
+    name: Security — Dependency Scan
+    runs-on: ubuntu-latest
+    needs: backend-test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install safety
+        run: pip install safety bandit
+      - name: Safety dependency scan
+        working-directory: backend
+        run: safety check -r requirements.txt --short-report || true
+      - name: Bandit SAST scan
+        working-directory: backend
+        run: bandit -r apps/ -ll -x apps/*/migrations/ || true
+
+  # ─────────────────────────────────────────
+  # 3. Frontend Tests
+  # ─────────────────────────────────────────
+  frontend-test:
+    name: Frontend — Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: TypeScript type check
+        working-directory: frontend
+        run: npm run typecheck
+
+      - name: Run ESLint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test -- --run --reporter=verbose
+
+      - name: Build production bundle
+        working-directory: frontend
+        run: npm run build
+
+  # ─────────────────────────────────────────
+  # 4. Build & Push Docker Image
+  # ─────────────────────────────────────────
+  build-image:
+    name: Docker — Build & Push
+    runs-on: ubuntu-latest
+    needs: [backend-test, security-scan, frontend-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags:   ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+  # ─────────────────────────────────────────
+  # 5. Deploy to Staging
+  # ─────────────────────────────────────────
+  deploy-staging:
+    name: Deploy — Staging
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key:      ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /opt/trademind
+            git pull origin develop
+            docker compose pull
+            docker compose up -d --no-deps --build api celery_worker celery_beat scanner_worker ai_worker
+            docker compose exec api python manage.py migrate --no-input
+            docker compose exec api python manage.py collectstatic --no-input
+            echo "Staging deployment complete"
+
+  # ─────────────────────────────────────────
+  # 6. Deploy to Production (manual approval)
+  # ─────────────────────────────────────────
+  deploy-production:
+    name: Deploy — Production
+    runs-on: ubuntu-latest
+    needs: build-image
+    if: github.ref == 'refs/heads/main'
+    environment: production   # requires manual approval in GitHub Environments
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/trademind
+            git pull origin main
+            docker compose pull
+            # Rolling deploy — no downtime
+            docker compose up -d --no-deps --build api celery_worker celery_beat scanner_worker ai_worker notification_worker
+            docker compose exec api python manage.py migrate --no-input
+            docker compose exec api python manage.py collectstatic --no-input
+            echo "Production deployment complete — $(date)"
