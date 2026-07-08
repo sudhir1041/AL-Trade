@@ -519,7 +519,7 @@
 - [ ] pytest unit tests (85% coverage target)
 - [ ] Integration tests for all API endpoints
 - [ ] ML model training pipeline (ml_engine/ views + training scripts)
-- [ ] Exchange adapter concrete implementations (Binance, Bybit, Mudrex)
+- [x] Exchange adapter concrete implementations (Binance, Bybit, Mudrex)
 - [ ] Django migrations (`python manage.py makemigrations && migrate`)
 - [ ] Data fixtures / seed data for exchanges and strategies
 - [ ] Playwright E2E tests
