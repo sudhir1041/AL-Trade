@@ -98,7 +98,7 @@
 ### T3.2 Exchange Adapters (Phase 1)
 - [ ] Binance adapter (REST + WebSocket)
 - [ ] Bybit adapter (REST + WebSocket)
-- [ ] Mudrex adapter (REST + WebSocket)
+- [x] Mudrex adapter (REST + WebSocket)
 
 ### T3.3 Exchange Adapters (Phase 2)
 - [ ] OKX adapter

@@ -1,0 +1,8 @@
+--- trademind-ai/backend/requirements.txt
++++ trademind-ai/backend/requirements.txt
+@@ -87,4 +87,3 @@
+ black==24.4.2
+ flake8==7.1.0
+ isort==5.13.2
+ mudrex-sdk==0.1.1
+-websockets>=11.0

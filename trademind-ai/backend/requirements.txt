@@ -85,3 +85,4 @@ coverage==7.6.0
 black==24.4.2
 flake8==7.1.0
 isort==5.13.2
+mudrex-sdk==0.1.1
