@@ -16,117 +16,119 @@ Key design rules:
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
 from typing import Any
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Unified Data Models
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class MarketInfo:
-    symbol:       str
-    base_asset:   str
-    quote_asset:  str
-    is_active:    bool = True
-    is_futures:   bool = True
+    symbol: str
+    base_asset: str
+    quote_asset: str
+    is_active: bool = True
+    is_futures: bool = True
     min_quantity: Decimal = Decimal("0.001")
     max_quantity: Decimal = Decimal("1000000")
     quantity_step: Decimal = Decimal("0.001")
-    price_step:   Decimal = Decimal("0.01")
+    price_step: Decimal = Decimal("0.01")
     min_notional: Decimal = Decimal("1.0")
-    raw:          dict    = field(default_factory=dict)
+    raw: dict = field(default_factory=dict)
 
 
 @dataclass
 class Ticker:
-    symbol:        str
-    price:         Decimal
-    bid:           Decimal = Decimal("0")
-    ask:           Decimal = Decimal("0")
-    high_24h:      Decimal = Decimal("0")
-    low_24h:       Decimal = Decimal("0")
-    volume_24h:    Decimal = Decimal("0")
+    symbol: str
+    price: Decimal
+    bid: Decimal = Decimal("0")
+    ask: Decimal = Decimal("0")
+    high_24h: Decimal = Decimal("0")
+    low_24h: Decimal = Decimal("0")
+    volume_24h: Decimal = Decimal("0")
     change_24h_pct: Decimal = Decimal("0")
-    timestamp:     datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
 class Candle:
-    symbol:    str
+    symbol: str
     timeframe: str
-    open:      Decimal
-    high:      Decimal
-    low:       Decimal
-    close:     Decimal
-    volume:    Decimal
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
     timestamp: datetime
 
 
 @dataclass
 class Balance:
-    asset:     str
+    asset: str
     available: Decimal
-    locked:    Decimal
-    total:     Decimal
+    locked: Decimal
+    total: Decimal
 
 
 @dataclass
 class ExchangePosition:
-    symbol:            str
-    side:              str         # "LONG" | "SHORT"
-    entry_price:       Decimal
-    quantity:          Decimal
-    unrealized_pnl:    Decimal
-    margin:            Decimal
-    leverage:          int
+    symbol: str
+    side: str  # "LONG" | "SHORT"
+    entry_price: Decimal
+    quantity: Decimal
+    unrealized_pnl: Decimal
+    margin: Decimal
+    leverage: int
     liquidation_price: Decimal = Decimal("0")
-    stop_loss_price:   Decimal | None = None
+    stop_loss_price: Decimal | None = None
     take_profit_price: Decimal | None = None
-    position_id:       str | None = None
-    trade_currency:    str = "USDT"
-    raw:               dict = field(default_factory=dict)
+    position_id: str | None = None
+    trade_currency: str = "USDT"
+    raw: dict = field(default_factory=dict)
 
 
 @dataclass
 class ExchangeOrder:
-    order_id:         str
-    client_order_id:  str
-    symbol:           str
-    side:             str        # "LONG" | "SHORT"
-    order_type:       str        # "MARKET" | "LIMIT"
-    status:           str        # "OPEN" | "FILLED" | "CANCELLED" | "PARTIALLY_FILLED"
-    quantity:         Decimal
-    price:            Decimal
-    filled_quantity:  Decimal = Decimal("0")
-    avg_fill_price:   Decimal = Decimal("0")
-    commission:       Decimal = Decimal("0")
+    order_id: str
+    client_order_id: str
+    symbol: str
+    side: str  # "LONG" | "SHORT"
+    order_type: str  # "MARKET" | "LIMIT"
+    status: str  # "OPEN" | "FILLED" | "CANCELLED" | "PARTIALLY_FILLED"
+    quantity: Decimal
+    price: Decimal
+    filled_quantity: Decimal = Decimal("0")
+    avg_fill_price: Decimal = Decimal("0")
+    commission: Decimal = Decimal("0")
     commission_asset: str = "USDT"
-    created_at:       datetime = field(default_factory=datetime.utcnow)
-    raw:              dict = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    raw: dict = field(default_factory=dict)
 
 
 @dataclass
 class OrderRequest:
     """Unified order request passed to adapter.place_order()"""
-    symbol:          str
-    side:            str         # "LONG" | "SHORT"
-    order_type:      str         # "MARKET" | "LIMIT"
-    quantity:        Decimal
-    price:           Decimal | None = None
+
+    symbol: str
+    side: str  # "LONG" | "SHORT"
+    order_type: str  # "MARKET" | "LIMIT"
+    quantity: Decimal
+    price: Decimal | None = None
     stop_loss_price: Decimal | None = None
     take_profit_price: Decimal | None = None
-    leverage:        int = 1
-    reduce_only:     bool = False
-    trade_currency:  str = "USDT"
+    leverage: int = 1
+    reduce_only: bool = False
+    trade_currency: str = "USDT"
     client_order_id: str | None = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Base Adapter Interface
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class BaseExchangeAdapter(ABC):
     """
@@ -142,12 +144,12 @@ class BaseExchangeAdapter(ABC):
     exchange_slug: str = "base"
     exchange_name: str = "Base Exchange"
     supports_futures: bool = True
-    supports_spot:    bool = True
+    supports_spot: bool = True
 
     def __init__(self, api_secret: str, is_testnet: bool = False):
-        self.api_secret   = api_secret
-        self.is_testnet   = is_testnet
-        self._connected   = False
+        self.api_secret = api_secret
+        self.is_testnet = is_testnet
+        self._connected = False
 
     # ── Connection ──────────────────────────────────────────────────────────
 

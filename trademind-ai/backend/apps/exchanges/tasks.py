@@ -19,6 +19,7 @@ def test_exchange_connection(self, account_id: str) -> dict:
     Updates connection_status on ExchangeAccount.
     """
     from apps.exchanges.models import ExchangeAccount
+
     try:
         account = ExchangeAccount.objects.get(pk=account_id)
         account.connection_status = "TESTING"
@@ -51,8 +52,11 @@ def sync_exchange_account(self, account_id: str) -> dict:
     Called by the portfolio_sync beat schedule every 30s and on-demand.
     """
     from apps.exchanges.models import ExchangeAccount
+
     try:
-        account = ExchangeAccount.objects.select_related("exchange", "user").get(pk=account_id)
+        account = ExchangeAccount.objects.select_related("exchange", "user").get(
+            pk=account_id
+        )
 
         if account.connection_status != "CONNECTED":
             return {"status": "SKIPPED", "reason": "Account not connected"}
@@ -60,7 +64,7 @@ def sync_exchange_account(self, account_id: str) -> dict:
         # TODO: call adapter.get_balance() and adapter.get_positions()
         # Scaffold — update sync timestamp
         account.balance_synced_at = timezone.now()
-        account.last_sync_at      = timezone.now()
+        account.last_sync_at = timezone.now()
         account.save(update_fields=["balance_synced_at", "last_sync_at"])
 
         logger.info("Exchange account synced: %s", account_id)

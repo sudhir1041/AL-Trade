@@ -27,12 +27,10 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Callable
 
-from .base import (
-    Balance, BaseExchangeAdapter, Candle, ExchangeOrder,
-    ExchangePosition, MarketInfo, OrderRequest, Ticker,
-)
+from .base import (Balance, BaseExchangeAdapter, Candle, ExchangeOrder,
+                   ExchangePosition, MarketInfo, OrderRequest, Ticker)
 
 logger = logging.getLogger("trademind.exchanges.mudrex")
 
 # Rate limit: stay well under 2 req/s
-MIN_REQ_INTERVAL = 0.55   # seconds between requests
+MIN_REQ_INTERVAL = 0.55  # seconds between requests

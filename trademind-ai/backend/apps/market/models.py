@@ -79,3 +79,46 @@ class TradingPair(models.Model):
 
     def __str__(self) -> str:
         return f"{self.symbol} @ {self.exchange}"
+
+class Ticker(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="tickers")
+    price = models.DecimalField(max_digits=20, decimal_places=8)
+    bid = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    ask = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    high_24h = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    low_24h = models.DecimalField(max_digits=20, decimal_places=8, null=True, blank=True)
+    volume_24h = models.DecimalField(max_digits=30, decimal_places=8, null=True, blank=True)
+    change_24h_pct = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class OHLCV(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="ohlcv")
+    timeframe = models.CharField(max_length=10, choices=Timeframe.choices)
+    timestamp = models.DateTimeField()
+    open = models.DecimalField(max_digits=20, decimal_places=8)
+    high = models.DecimalField(max_digits=20, decimal_places=8)
+    low = models.DecimalField(max_digits=20, decimal_places=8)
+    close = models.DecimalField(max_digits=20, decimal_places=8)
+    volume = models.DecimalField(max_digits=30, decimal_places=8)
+
+class FundingRate(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="funding_rates")
+    rate = models.DecimalField(max_digits=10, decimal_places=6)
+    timestamp = models.DateTimeField()
+
+class OpenInterest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="open_interests")
+    value = models.DecimalField(max_digits=30, decimal_places=8)
+    timestamp = models.DateTimeField()
+
+class Liquidation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="liquidations")
+    side = models.CharField(max_length=10)
+    quantity = models.DecimalField(max_digits=30, decimal_places=8)
+    price = models.DecimalField(max_digits=20, decimal_places=8)
+    timestamp = models.DateTimeField()
