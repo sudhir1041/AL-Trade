@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-neutral-700; }
+
+  html { font-size: 14px; }
+
+  body {
+    @apply bg-neutral-900 text-neutral-100;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { @apply bg-neutral-800; }
+  ::-webkit-scrollbar-thumb { @apply bg-neutral-600 rounded-full; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-neutral-500; }
+}
+
+@layer components {
+  /* Card */
+  .card {
+    @apply bg-neutral-800 border border-neutral-700 rounded-card shadow-card;
+  }
+
+  /* Widget */
+  .widget {
+    @apply bg-neutral-800 border border-neutral-700 rounded-widget p-4;
+  }
+
+  /* Badge variants */
+  .badge-buy  { @apply bg-buy-muted text-buy   text-xs font-semibold px-2 py-0.5 rounded-badge; }
+  .badge-sell { @apply bg-sell-muted text-sell  text-xs font-semibold px-2 py-0.5 rounded-badge; }
+  .badge-hold { @apply bg-neutral-700 text-neutral-300 text-xs font-semibold px-2 py-0.5 rounded-badge; }
+
+  /* Positive/negative PnL */
+  .pnl-positive { @apply text-success; }
+  .pnl-negative { @apply text-danger; }
+
+  /* Trading value (monospace) */
+  .trading-value { @apply font-mono text-trading; }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+           text-neutral-400 hover:text-neutral-100 hover:bg-neutral-700/50
+           transition-colors cursor-pointer;
+  }
+  .nav-item.active {
+    @apply text-neutral-100 bg-brand-600/20 text-brand-400;
+  }
+}
