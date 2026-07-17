@@ -1,127 +1,120 @@
 # TradeMind AI Frontend
 
-## Quick Start
+React + TypeScript frontend for the TradeMind AI quantitative trading platform.
+
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ installed
-- Backend API running on http://localhost:8000
+- Node.js 18+ 
+- npm or yarn
+- Backend API running on `http://localhost:8000`
 
 ### Installation
 
 ```bash
-# Install dependencies
+cd frontend
 npm install
+```
 
-# Start development server
+### Development
+
+```bash
 npm run dev
+```
 
-# Build for production
+The app will start at `http://localhost:3000`
+
+### Build for Production
+
+```bash
 npm run build
-
-# Preview production build
 npm run preview
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 frontend/
-├── public/              # Static assets
-│   └── index.html       # Landing page (no dependencies)
 ├── src/
-│   ├── components/      # Reusable UI components
-│   ├── pages/           # Page components
-│   ├── services/        # API service layer
-│   ├── lib/             # Utilities and helpers
-│   ├── styles/          # CSS stylesheets
-│   ├── types/           # TypeScript type definitions
-│   ├── App.jsx          # Main app component
-│   ├── main.jsx         # Entry point
-│   └── vite-env.d.ts    # Vite environment types
-├── index.html           # HTML template for React app
-├── package.json         # Dependencies and scripts
-└── vite.config.js       # Vite configuration
+│   ├── components/
+│   │   ├── layout/       # Sidebar, Header
+│   │   └── ui/           # Reusable UI components (Button, Card, Table, Badge)
+│   ├── pages/            # Page components
+│   │   ├── Dashboard.tsx
+│   │   ├── Terminal.tsx
+│   │   ├── Strategies.tsx
+│   │   ├── Portfolio.tsx
+│   │   ├── AISignals.tsx
+│   │   └── Settings.tsx
+│   ├── services/         # API client and services
+│   ├── store/            # Zustand state management
+│   ├── types/            # TypeScript type definitions
+│   ├── lib/              # Utilities and helpers
+│   ├── App.tsx           # Main app component
+│   ├── main.tsx          # Entry point
+│   └── index.css         # Global styles
+├── public/
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── tailwind.config.js
+└── postcss.config.js
 ```
 
-## Features
+## 🎨 Features
 
-✅ **Landing Page** (`public/index.html`)
-- No dependencies required
-- Opens directly in browser
-- Shows platform features
-- Backend health status indicator
+### Pages Implemented
+- **Dashboard**: Overview of portfolio, strategies, and AI signals
+- **Terminal**: Real-time trading interface with order book and chart
+- **Strategies**: Manage and create trading strategies
+- **Portfolio**: Track holdings and performance
+- **AI Signals**: View ML-powered trading signals
+- **Settings**: Account and preference management
 
-✅ **React App** (requires `npm install`)
-- Modern React 18 with Vite
-- API integration ready
-- Responsive design
-- Beautiful gradient UI
-- Feature showcase cards
-- Real-time backend status
+### UI Components
+- Button (multiple variants)
+- Card (with header, content, footer)
+- Badge (status indicators)
+- Table (sortable, clickable rows)
+- Sidebar (responsive navigation)
+- Header (search, notifications)
 
-## Pages to Implement
+### State Management
+- Zustand for global state
+- React hooks for local state
+- TypeScript for type safety
 
-1. **Authentication** - Login/Register
-2. **Dashboard** - Overview and metrics
-3. **Terminal** - Live trading interface
-4. **Scanner** - Market opportunities
-5. **Portfolio** - Holdings and performance
-6. **Strategies** - Strategy management
-7. **AI Signals** - ML predictions
-8. **Reports** - Analytics and charts
-9. **Settings** - User preferences
-10. **Admin** - Admin panel
+### API Integration
+- Axios client with interceptors
+- JWT authentication
+- Services for all backend endpoints
 
-## API Integration
+## 🛠️ Tech Stack
 
-The frontend connects to the Django backend at `/api/v1/`. Configure proxy in `vite.config.js`:
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **Zustand** - State management
+- **React Router** - Navigation
+- **Axios** - HTTP client
+- **Recharts** - Charts (ready to integrate)
+- **Lucide React** - Icons
 
-```javascript
-server: {
-  proxy: {
-    '/api': {
-      target: 'http://localhost:8000',
-      changeOrigin: true
-    }
-  }
-}
-```
+## 🔌 API Connection
 
-## Environment Variables
-
-Create `.env` file:
+Update `.env` file to connect to your backend:
 
 ```env
-VITE_API_URL=http://localhost:8000/api/v1
+VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_WS_URL=ws://localhost:8000/ws
 ```
 
-## Scripts
+## 📝 Mock Data
 
-- `npm run dev` - Start development server (port 3000)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint (when configured)
+The frontend includes mock data for demonstration. Replace with real API calls when ready.
 
-## Next Steps
+## 📄 License
 
-1. Install dependencies: `npm install`
-2. Start dev server: `npm run dev`
-3. Open http://localhost:3000
-4. Build remaining pages
-5. Add authentication flow
-6. Connect to backend APIs
-7. Add real-time WebSocket updates
-
-## Tech Stack
-
-- **React 18** - UI library
-- **Vite** - Build tool and dev server
-- **CSS3** - Styling with gradients and glassmorphism
-- **Fetch API** - HTTP requests
-- **Future**: TypeScript, Radix UI, TailwindCSS, Zustand
-
----
-
-**Backend Status**: ✅ Complete (17 Django apps, 27 tests passing)
-**Frontend Status**: 🚧 In Progress (Structure ready, needs dependencies)
+MIT
