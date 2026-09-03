@@ -188,6 +188,7 @@ class IndicatorEngine:
         delta  = df["close"].diff()
         gain   = delta.clip(lower=0).ewm(span=period, adjust=False).mean()
         loss   = (-delta.clip(upper=0)).ewm(span=period, adjust=False).mean()
+
         rs     = gain / loss.replace(0, np.nan)
         rsi_v  = (100 - (100 / (1 + rs))).iloc[-1]
         return {
