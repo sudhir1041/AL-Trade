@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Settings, Shield, Link, Bell, Palette, Key, LogOut } from 'lucide-react'
 import { api } from '@/lib/api'
 import { Card, Button, Input, Badge, Spinner } from '@/components/ui'
+import { exchangeService } from '@/services'
 import toast from 'react-hot-toast'
 
 const TABS = [
@@ -29,7 +30,7 @@ export function SettingsPage() {
 
   // Custom mock state for Mudrex integration
   const [mudrexSecret, setMudrexSecret] = useState('')
-  const [mudrexConnected, setMudrexConnected] = useState(false)
+  const hasMudrex = accounts.some(a => a.exchange_name === 'mudrex' || a.label.toLowerCase().includes('mudrex'))
 
   // Mutations
   const updateProfile = useMutation({
@@ -109,7 +110,7 @@ export function SettingsPage() {
             <div className="space-y-4">
               <Card title="Connected Exchanges">
                 <div className="p-4 space-y-3">
-                  {accounts.length === 0 && !mudrexConnected
+                  {accounts.length === 0 && !hasMudrex
                     ? <p className="text-sm text-neutral-400">No exchanges connected.</p>
                     : accounts.map((a: any) => (
                         <div key={a.id} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg">
@@ -124,25 +125,12 @@ export function SettingsPage() {
                         </div>
                       ))
                   }
-                  {mudrexConnected && (
-                    <div className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg border border-brand-500/30">
-                        <div>
-                          <p className="text-sm font-medium text-neutral-100">Mudrex Integration (Live)</p>
-                          <p className="text-xs text-brand-400 mt-1 flex items-center gap-1">
-                             <Shield size={12} /> All Premium Features Enabled
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="success">CONNECTED</Badge>
-                          <Button size="sm" variant="ghost" onClick={() => {
-                              setMudrexConnected(false);
-                              setMudrexSecret('');
-                              toast.success('Mudrex integration disconnected');
-                          }}>Remove</Button>
-                        </div>
+                  {hasMudrex && (
+                    <div className="mt-2 text-xs text-brand-400 flex items-center gap-1">
+                        <Shield size={12} /> Mudrex connected: All Premium Features Enabled
                     </div>
                   )}
-                  {!mudrexConnected && (
+                  {!hasMudrex && (
                     <div className="mt-4 pt-4 border-t border-neutral-700">
                       <h3 className="text-sm font-medium mb-3">Add Mudrex Integration</h3>
                       <div className="flex gap-2 items-end">
@@ -156,10 +144,17 @@ export function SettingsPage() {
                            />
                         </div>
                         <Button
-                            onClick={() => {
+                            onClick={async () => {
                                 if(mudrexSecret.length > 5) {
-                                    setMudrexConnected(true);
-                                    toast.success('Mudrex successfully connected! All features activated.');
+                                    try {
+                                      // Mudrex id normally obtained from /exchanges/ list, sending generic for mock integration
+                                      await exchangeService.addAccount({ exchange: "mudrex", label: "Mudrex Live", api_key: "MUDREX", api_secret: mudrexSecret, is_testnet: false });
+
+                                      toast.success('Mudrex successfully connected! All features activated.');
+                                      queryClient.invalidateQueries({ queryKey: ['exchange-accounts'] });
+                                    } catch (err: any) {
+                                      toast.error('Failed to connect to Mudrex');
+                                    }
                                 } else {
                                     toast.error('Invalid API Secret');
                                 }
