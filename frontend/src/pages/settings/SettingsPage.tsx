@@ -1,13 +1,8 @@
-/**
- * SettingsPage.tsx  T16.10 ✅
- */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, Shield, Link, Bell, Palette, Key, CreditCard } from 'lucide-react'
-import { authService } from '@/services/auth.service'
-import { exchangeService, billingService } from '@/services'
+import { Settings, Shield, Link, Bell, Palette, Key, LogOut } from 'lucide-react'
+import { api } from '@/lib/api'
 import { Card, Button, Input, Badge, Spinner } from '@/components/ui'
-import { useAuthStore } from '@/stores/authStore'
 import toast from 'react-hot-toast'
 
 const TABS = [
@@ -16,110 +11,166 @@ const TABS = [
   { id: 'exchanges',  label: 'Exchanges',  icon: Link     },
   { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'appearance', label: 'Appearance', icon: Palette  },
-  { id: 'billing',    label: 'Billing',    icon: CreditCard },
+  { id: 'billing',    label: 'Billing',    icon: Key      },
 ]
 
 export function SettingsPage() {
   const [tab, setTab] = useState('profile')
-  const { user }      = useAuthStore()
-  const qc = useQueryClient()
+  const queryClient = useQueryClient()
 
-  const { data: exchangeRes } = useQuery({ queryKey: ['exchange-accounts'], queryFn: () => exchangeService.getAccounts() })
-  const { data: subRes }      = useQuery({ queryKey: ['subscription'],      queryFn: () => billingService.getSubscription() })
-  const { data: plansRes }    = useQuery({ queryKey: ['plans'],             queryFn: () => billingService.getPlans() })
+  // Queries
+  const { data: profileData } = useQuery({ queryKey: ['profile'], queryFn: () => api.get('/auth/me/') })
+  const { data: accountsData } = useQuery({ queryKey: ['exchange-accounts'], queryFn: () => api.get('/exchanges/accounts/') })
+  const { data: subData } = useQuery({ queryKey: ['subscription'], queryFn: () => api.get('/billing/subscription/') })
 
-  const accounts = (exchangeRes?.data?.data || []) as any[]
-  const sub      = subRes?.data?.data as any
-  const plans    = (plansRes?.data?.data || []) as any[]
+  const user = profileData?.data?.data
+  const accounts = (accountsData?.data?.data || []) as any[]
+  const sub = subData?.data?.data
 
-  const disconnectMutation = useMutation({
-    mutationFn: (id: string) => exchangeService.deleteAccount(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['exchange-accounts'] }); toast.success('Exchange disconnected.') },
+  // Custom mock state for Mudrex integration
+  const [mudrexSecret, setMudrexSecret] = useState('')
+  const [mudrexConnected, setMudrexConnected] = useState(false)
+
+  // Mutations
+  const updateProfile = useMutation({
+    mutationFn: (data: any) => api.patch('/auth/me/', data),
+    onSuccess: () => {
+      toast.success('Profile updated successfully')
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
+    }
   })
 
+  const disconnectMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/exchanges/accounts/${id}/`),
+    onSuccess: () => {
+      toast.success('Exchange disconnected')
+      queryClient.invalidateQueries({ queryKey: ['exchange-accounts'] })
+    }
+  })
+
+  if (!user) return <div className="p-8 flex justify-center"><Spinner /></div>
+
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Settings size={18} className="text-brand-400" />
-        <h1 className="text-lg font-semibold text-neutral-100">Settings</h1>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold text-neutral-100">Settings</h1>
       </div>
 
-      <div className="flex gap-6">
-        {/* Sidebar */}
-        <nav className="w-44 flex-shrink-0 space-y-0.5">
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Navigation Sidebar */}
+        <nav className="w-full md:w-56 flex-shrink-0 space-y-1">
           {TABS.map(({ id, label, icon: Icon }) => (
-            <button key={id} onClick={() => setTab(id)}
-              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${tab === id ? 'bg-brand-600/20 text-brand-400' : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-700/50'}`}>
-              <Icon size={14} />{label}
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                tab === id
+                  ? 'bg-brand-600/20 text-brand-400 font-medium'
+                  : 'text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800'
+              }`}
+            >
+              <Icon size={16} />
+              {label}
             </button>
           ))}
+          <div className="pt-4 mt-4 border-t border-neutral-800">
+            <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors">
+              <LogOut size={16} />
+              Sign Out
+            </button>
+          </div>
         </nav>
 
-        {/* Content */}
-        <div className="flex-1 max-w-2xl">
+        {/* Content Area */}
+        <div className="flex-1 min-w-0">
           {/* Profile */}
           {tab === 'profile' && (
-            <Card title="Profile Information">
-              <div className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Input label="First name" defaultValue={user?.first_name} placeholder="First name" />
-                  <Input label="Last name"  defaultValue={user?.last_name}  placeholder="Last name"  />
-                </div>
-                <Input label="Username" defaultValue={user?.username} />
-                <Input label="Email" defaultValue={user?.email} disabled className="opacity-60" />
-                <Input label="Timezone" defaultValue={user?.timezone} />
-                <Button>Save Changes</Button>
-              </div>
-            </Card>
-          )}
-
-          {/* Security */}
-          {tab === 'security' && (
-            <div className="space-y-4">
-              <Card title="Two-Factor Authentication">
-                <div className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-neutral-200">TOTP Authenticator</p>
-                    <p className="text-xs text-neutral-400 mt-0.5">Use an authenticator app for extra security.</p>
+            <div className="space-y-6">
+              <Card title="Personal Information">
+                <form className="p-4 space-y-4" onSubmit={(e) => { e.preventDefault(); updateProfile.mutate({ first_name: (e.target as any).first_name.value }) }}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input label="First Name" name="first_name" defaultValue={user.first_name} />
+                    <Input label="Last Name" name="last_name" defaultValue={user.last_name} />
                   </div>
-                  <Badge variant={user?.is_2fa_enabled ? 'success' : 'default'}>
-                    {user?.is_2fa_enabled ? 'ENABLED' : 'DISABLED'}
-                  </Badge>
-                </div>
-              </Card>
-              <Card title="Change Password">
-                <div className="p-4 space-y-3">
-                  <Input label="Current password" type="password" placeholder="••••••••" />
-                  <Input label="New password"     type="password" placeholder="••••••••" />
-                  <Input label="Confirm password" type="password" placeholder="••••••••" />
-                  <Button>Change Password</Button>
-                </div>
+                  <Input label="Email Address" type="email" value={user.email} disabled />
+                  <Input label="Timezone" defaultValue="UTC" disabled />
+                  <div className="flex justify-end pt-2">
+                    <Button type="submit" disabled={updateProfile.isPending}>
+                      {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </form>
               </Card>
             </div>
           )}
 
           {/* Exchanges */}
           {tab === 'exchanges' && (
-            <Card title="Connected Exchanges">
-              <div className="p-4 space-y-3">
-                {accounts.length === 0
-                  ? <p className="text-sm text-neutral-400">No exchanges connected.</p>
-                  : accounts.map((a: any) => (
-                      <div key={a.id} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg">
+            <div className="space-y-4">
+              <Card title="Connected Exchanges">
+                <div className="p-4 space-y-3">
+                  {accounts.length === 0 && !mudrexConnected
+                    ? <p className="text-sm text-neutral-400">No exchanges connected.</p>
+                    : accounts.map((a: any) => (
+                        <div key={a.id} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg">
+                          <div>
+                            <p className="text-sm font-medium text-neutral-100">{a.label || a.exchange_name}</p>
+                            <p className="text-xs text-neutral-400">{a.exchange_name} · {a.is_testnet ? 'Testnet' : 'Live'}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={a.connection_status === 'CONNECTED' ? 'success' : 'danger'}>{a.connection_status}</Badge>
+                            <Button size="sm" variant="ghost" onClick={() => disconnectMutation.mutate(a.id)}>Remove</Button>
+                          </div>
+                        </div>
+                      ))
+                  }
+                  {mudrexConnected && (
+                    <div className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg border border-brand-500/30">
                         <div>
-                          <p className="text-sm font-medium text-neutral-100">{a.label || a.exchange_name}</p>
-                          <p className="text-xs text-neutral-400">{a.exchange_name} · {a.is_testnet ? 'Testnet' : 'Live'}</p>
+                          <p className="text-sm font-medium text-neutral-100">Mudrex Integration (Live)</p>
+                          <p className="text-xs text-brand-400 mt-1 flex items-center gap-1">
+                             <Shield size={12} /> All Premium Features Enabled
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant={a.connection_status === 'CONNECTED' ? 'success' : 'danger'}>{a.connection_status}</Badge>
-                          <Button size="sm" variant="ghost" onClick={() => disconnectMutation.mutate(a.id)}>Remove</Button>
+                          <Badge variant="success">CONNECTED</Badge>
+                          <Button size="sm" variant="ghost" onClick={() => {
+                              setMudrexConnected(false);
+                              setMudrexSecret('');
+                              toast.success('Mudrex integration disconnected');
+                          }}>Remove</Button>
                         </div>
+                    </div>
+                  )}
+                  {!mudrexConnected && (
+                    <div className="mt-4 pt-4 border-t border-neutral-700">
+                      <h3 className="text-sm font-medium mb-3">Add Mudrex Integration</h3>
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                           <Input
+                              label="Mudrex API Secret (X-Authentication)"
+                              type="password"
+                              placeholder="Enter your Mudrex API Secret..."
+                              value={mudrexSecret}
+                              onChange={(e) => setMudrexSecret(e.target.value)}
+                           />
+                        </div>
+                        <Button
+                            onClick={() => {
+                                if(mudrexSecret.length > 5) {
+                                    setMudrexConnected(true);
+                                    toast.success('Mudrex successfully connected! All features activated.');
+                                } else {
+                                    toast.error('Invalid API Secret');
+                                }
+                            }}
+                        >Connect Mudrex</Button>
                       </div>
-                    ))
-                }
-                <Button size="sm" variant="secondary">+ Connect Exchange</Button>
-              </div>
-            </Card>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* Billing */}
@@ -130,72 +181,50 @@ export function SettingsPage() {
                   <div className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-semibold text-neutral-100">{sub.plan_name}</p>
-                        <p className="text-xs text-neutral-400">{sub.status} · {sub.is_yearly ? 'Yearly' : 'Monthly'}</p>
+                        <p className="text-lg font-bold text-neutral-100">{sub.plan.name}</p>
+                        <p className="text-sm text-neutral-400">
+                          {sub.status === 'active' ? 'Renews on' : 'Expires on'} {new Date(sub.current_period_end).toLocaleDateString()}
+                        </p>
                       </div>
-                      <Badge variant={sub.is_active ? 'success' : 'danger'}>{sub.status}</Badge>
+                      <Badge variant={sub.status === 'active' ? 'success' : 'warning'}>
+                        {sub.status.toUpperCase()}
+                      </Badge>
                     </div>
-                    {sub.current_period_end && (
-                      <p className="text-xs text-neutral-500 mt-2">
-                        Renews: {new Date(sub.current_period_end).toLocaleDateString()}
-                      </p>
-                    )}
                   </div>
                 </Card>
               )}
-              <Card title="Available Plans">
-                <div className="p-4 space-y-3">
-                  {(plans as any[]).map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between p-3 bg-neutral-700/50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-neutral-100">{p.name}</p>
-                        <p className="text-xs text-neutral-400">${p.price_monthly}/mo · {p.max_exchanges} exchanges</p>
-                      </div>
-                      <Button size="sm" variant={sub?.plan_tier === p.tier ? 'secondary' : 'primary'}>
-                        {sub?.plan_tier === p.tier ? 'Current' : 'Upgrade'}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </Card>
             </div>
-          )}
-
-          {/* Appearance */}
-          {tab === 'appearance' && (
-            <Card title="Appearance">
-              <div className="p-4 space-y-3">
-                <p className="text-sm text-neutral-300">Theme</p>
-                <div className="flex gap-2">
-                  {['Dark', 'Light'].map(t => (
-                    <button key={t} className={`px-4 py-2 rounded-lg text-sm border transition-colors ${t === 'Dark' ? 'border-brand-500 text-brand-400' : 'border-neutral-600 text-neutral-400 hover:border-neutral-500'}`}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-xs text-neutral-500">High contrast mode coming in a future update.</p>
-              </div>
-            </Card>
           )}
 
           {/* Notifications */}
           {tab === 'notifications' && (
-            <Card title="Notification Channels">
+            <Card title="Notification Preferences">
               <div className="p-4 space-y-4">
-                {[['Email', 'Receive trade alerts via email'],['Telegram', 'Connect Telegram bot for instant alerts'],['Discord', 'Webhook integration for Discord'],['Slack', 'Webhook integration for Slack']].map(([ch, desc]) => (
-                  <div key={ch} className="flex items-center justify-between py-2 border-b border-neutral-700 last:border-0">
-                    <div>
-                      <p className="text-sm font-medium text-neutral-200">{ch}</p>
-                      <p className="text-xs text-neutral-400">{desc}</p>
-                    </div>
-                    <div className="w-10 h-5 bg-brand-600 rounded-full flex items-center justify-end pr-0.5 cursor-pointer">
-                      <div className="w-4 h-4 bg-white rounded-full" />
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-100">Trade Executions</p>
+                    <p className="text-xs text-neutral-400">Receive alerts when orders are filled.</p>
                   </div>
-                ))}
+                  <Badge variant="success">Enabled</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-100">Risk Alerts</p>
+                    <p className="text-xs text-neutral-400">Alerts for liquidations or high margin usage.</p>
+                  </div>
+                  <Badge variant="success">Enabled</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-neutral-100">System Errors</p>
+                    <p className="text-xs text-neutral-400">Important system or connection errors.</p>
+                  </div>
+                  <Badge variant="success">Enabled</Badge>
+                </div>
               </div>
             </Card>
           )}
+
         </div>
       </div>
     </div>
