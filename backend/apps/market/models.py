@@ -79,3 +79,39 @@ class TradingPair(models.Model):
 
     def __str__(self) -> str:
         return f"{self.symbol} @ {self.exchange}"
+
+class Ticker(models.Model):
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="tickers")
+    last_price = models.DecimalField(max_digits=30, decimal_places=8)
+    volume_24h = models.DecimalField(max_digits=30, decimal_places=8)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+class OHLCV(models.Model):
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="ohlcvs")
+    timeframe = models.CharField(max_length=5, choices=Timeframe.choices)
+    timestamp = models.DateTimeField()
+    open = models.DecimalField(max_digits=30, decimal_places=8)
+    high = models.DecimalField(max_digits=30, decimal_places=8)
+    low = models.DecimalField(max_digits=30, decimal_places=8)
+    close = models.DecimalField(max_digits=30, decimal_places=8)
+    volume = models.DecimalField(max_digits=30, decimal_places=8)
+
+    class Meta:
+        unique_together = [("trading_pair", "timeframe", "timestamp")]
+
+class FundingRate(models.Model):
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="funding_rates")
+    rate = models.DecimalField(max_digits=10, decimal_places=8)
+    timestamp = models.DateTimeField()
+
+class OpenInterest(models.Model):
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="open_interests")
+    open_interest = models.DecimalField(max_digits=30, decimal_places=8)
+    timestamp = models.DateTimeField()
+
+class Liquidation(models.Model):
+    trading_pair = models.ForeignKey(TradingPair, on_delete=models.CASCADE, related_name="liquidations")
+    side = models.CharField(max_length=10)
+    quantity = models.DecimalField(max_digits=30, decimal_places=8)
+    price = models.DecimalField(max_digits=30, decimal_places=8)
+    timestamp = models.DateTimeField()

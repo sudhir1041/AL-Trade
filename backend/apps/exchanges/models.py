@@ -6,7 +6,7 @@ Exchange connectivity and account management for TradeMind AI.
 Models
 ------
 - Exchange           : Supported exchange registry
-- ExchangeAccount    : User-owned exchange credentials (TenantAwareModel)
+- ExchangeAccount    : User-owned exchange credentials (TenantBaseModel)
 - ExchangeConnection : WebSocket / REST connection lifecycle log
 - ExchangeLog        : Per-request audit log for exchange API calls
 """
@@ -15,7 +15,7 @@ import uuid
 
 from django.db import models
 
-from core.models import TenantAwareModel
+from core.models import TenantBaseModel
 from apps.accounts.models import User
 
 
@@ -76,7 +76,7 @@ class Exchange(models.Model):
 # ExchangeAccount
 # ---------------------------------------------------------------------------
 
-class ExchangeAccount(TenantAwareModel):
+class ExchangeAccount(TenantBaseModel):
     """
     Stores encrypted API credentials for a user's exchange account.
     Encryption/decryption is handled in the service layer, not here.
@@ -119,7 +119,7 @@ class ExchangeAccount(TenantAwareModel):
         verbose_name="Connection Status",
     )
 
-    class Meta(TenantAwareModel.Meta):
+    class Meta(TenantBaseModel.Meta):
         verbose_name        = "Exchange Account"
         verbose_name_plural = "Exchange Accounts"
         ordering            = ["-created_at"]

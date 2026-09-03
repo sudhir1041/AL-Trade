@@ -1,3 +1,4 @@
+import sys
 """
 TradeMind AI - Development Settings
 =====================================
@@ -94,3 +95,16 @@ CSRF_COOKIE_SECURE = False
 # ---------------------------------------------------------------------------
 SHELL_PLUS = "ipython"  # django-extensions shell_plus uses IPython if installed
 SHELL_PLUS_PRINT_SQL = True
+
+import os
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+# Quick switch to sqlite3 if local testing without docker
+if os.environ.get('USE_SQLITE') == '1' or 'test' in sys.argv or 'pytest' in sys.modules:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
